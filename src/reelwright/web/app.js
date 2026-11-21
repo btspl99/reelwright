@@ -47,7 +47,7 @@
       $("#who").textContent = me.user.email;
       const u = me.usage;
       $("#usage").textContent = u && u.minutes_limit > 0 ? `${u.minutes_used.toFixed(0)}/${u.minutes_limit} min` : "";
-      await loadJobs();
+      await loadJobs(); loadKeys().catch(() => {});
     } catch (e) { $("#job-error").textContent = e.message; }
   }
 
@@ -135,6 +135,23 @@
       else throw new Error("Paste a video URL or choose a file.");
       ev.target.reset(); await loadJobs();
     } catch (e) { $("#job-error").textContent = e.message; }
+  });
+
+  async function loadKeys() {
+    const keys = await api("/keys");
+    const box = $("#keys"); box.replaceChildren();
+    for (const k of keys) {
+      if (k.revoked_at) continue;
+      box.append(el("div", { class: "row" }, el("span", { class: "meta" }, `${k.name} (${k.prefix}…)`),
+        el("button", { type: "button", class: "ghost", onclick: async () => { await api("/keys/" + k.id, { method: "DELETE" }); loadKeys(); } }, "Revoke")));
+    }
+  }
+  $("#key-form").addEventListener("submit", async (ev) => {
+    ev.preventDefault(); $("#key-error").textContent = "";
+    try {
+      const data = await api("/keys", { method: "POST", json: { name: new FormData(ev.target).get("name") } });
+      $("#key-value").textContent = data.key; $("#key-new").hidden = false; ev.target.reset(); loadKeys();
+    } catch (e) { $("#key-error").textContent = e.message; }
   });
   render();
 })();

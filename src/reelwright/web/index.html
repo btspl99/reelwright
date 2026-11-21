@@ -37,6 +37,14 @@
     <button type="submit">Create clips</button>
     <p id="job-error" class="error" role="alert"></p>
   </form>
+  <h2>API keys</h2>
+  <form id="key-form" class="card">
+    <label>Key name <input name="name" required maxlength="120" placeholder="claude-desktop"></label>
+    <button type="submit">Create API key</button>
+    <p id="key-new" class="meta" hidden>Copy this key now. It will not be shown again: <code id="key-value"></code></p>
+    <p id="key-error" class="error" role="alert"></p>
+    <div id="keys"></div>
+  </form>
   <h2>Jobs</h2>
   <div id="jobs"></div>
 </section>
