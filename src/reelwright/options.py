@@ -7,6 +7,21 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 
+class ClipWindow(BaseModel):
+    """A clip range chosen by the caller instead of the automatic selector."""
+
+    start: float = Field(ge=0)
+    end: float = Field(gt=0)
+    title: str = Field("", max_length=100)
+    hook: str = Field("", max_length=100)
+
+    @model_validator(mode="after")
+    def _check_window(self) -> ClipWindow:
+        if not 3 <= self.end - self.start <= 300:
+            raise ValueError("a clip window must be between 3 and 300 seconds long")
+        return self
+
+
 class JobOptions(BaseModel):
     max_clips: int = Field(5, ge=1, le=30)
     min_seconds: float = Field(15, ge=5, le=120)
@@ -17,6 +32,8 @@ class JobOptions(BaseModel):
     hook_title: bool = True
     platform: Literal["shorts", "tiktok", "reels"] = "shorts"
     use_llm: bool = True
+    # When given, these ranges are rendered as-is and automatic selection is skipped.
+    windows: list[ClipWindow] | None = Field(None, max_length=30)
 
     @model_validator(mode="after")
     def _check_range(self) -> JobOptions:

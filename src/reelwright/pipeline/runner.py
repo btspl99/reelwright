@@ -17,7 +17,7 @@ from .llm import get_llm
 from .media import MediaError, extract_audio, probe
 from .reframe import plan_reframe
 from .render import PLATFORM_MAX_SECONDS, render_clip
-from .segments import select_clips
+from .segments import ClipPlan, select_clips
 from .transcribe import Transcript, TranscriptionError, get_transcriber
 
 log = logging.getLogger("reelwright.runner")
@@ -113,10 +113,22 @@ def _run_pipeline(job_id: str, settings: Settings, reporter: Reporter) -> None:
     max_seconds = min(options.max_seconds, PLATFORM_MAX_SECONDS[options.platform])
     min_seconds = min(options.min_seconds, max_seconds - 1)
     limit = min(options.max_clips, plan.max_clips_per_job)
-    plans = select_clips(
-        transcript, info.duration, max_clips=limit, min_seconds=min_seconds, max_seconds=max_seconds,
-        llm=get_llm(settings) if options.use_llm else None,
-    )
+    if options.windows:
+        zero = {"hook": 0.0, "engagement": 0.0, "value": 0.0, "shareability": 0.0, "overall": 0.0}
+        plans = [
+            ClipPlan(
+                round(max(0.0, w.start), 2), round(min(info.duration, w.end), 2),
+                (w.title or f"Clip {n}")[:60], (w.hook or w.title or f"Clip {n}")[:70],
+                "Range chosen by the caller.", dict(zero),
+            )
+            for n, w in enumerate(options.windows[:limit], 1)
+            if w.start < info.duration
+        ]
+    else:
+        plans = select_clips(
+            transcript, info.duration, max_clips=limit, min_seconds=min_seconds, max_seconds=max_seconds,
+            llm=get_llm(settings) if options.use_llm else None,
+        )
     if not plans:
         raise JobFailed("No clips could be found in this video.")
 
