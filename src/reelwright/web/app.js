@@ -141,7 +141,7 @@
     const keys = await api("/keys");
     const box = $("#keys"); box.replaceChildren();
     for (const k of keys) {
-      if (k.revoked_at) continue;
+      if (k.revoked) continue;
       box.append(el("div", { class: "row" }, el("span", { class: "meta" }, `${k.name} (${k.prefix}…)`),
         el("button", { type: "button", class: "ghost", onclick: async () => { await api("/keys/" + k.id, { method: "DELETE" }); loadKeys(); } }, "Revoke")));
     }
