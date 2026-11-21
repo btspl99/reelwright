@@ -33,13 +33,13 @@ class RenderResult:
 
 
 def build_command(
-    settings: Settings, src: Path, out_name: str, start: float, duration: float, *, has_audio: bool
+    settings: Settings, src: Path, out_name: str, start: float, duration: float, *, has_audio: bool, graph: str
 ) -> list[str]:
     encoder = ENCODERS.get(settings.video_encoder, ENCODERS["libx264"])
     cmd = [
         settings.ffmpeg_path, "-y", "-hide_banner", "-loglevel", "error",
         "-ss", f"{start:.3f}", "-t", f"{duration:.3f}", "-i", str(src),
-        "-filter_script:v", "graph.txt", "-map", "0:v:0",
+        "-vf", graph, "-map", "0:v:0",  # inline: -filter_script was removed in FFmpeg 7+
     ]
     if has_audio:
         cmd += ["-map", "0:a:0", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-ac", "2"]
@@ -73,8 +73,7 @@ def render_clip(
             ass = build_ass(words, start, end, style=caption_style, font=settings.caption_font, title=title)
             (tmpdir / "captions.ass").write_text(ass, encoding="utf-8")
             graph += ",subtitles=filename=captions.ass"
-        (tmpdir / "graph.txt").write_text(graph)
-        run(build_command(settings, src.resolve(), "out.mp4", start, duration, has_audio=info.has_audio), cwd=tmpdir, timeout=3600)
+        run(build_command(settings, src.resolve(), "out.mp4", start, duration, has_audio=info.has_audio, graph=graph), cwd=tmpdir, timeout=3600)
         shutil.move(str(tmpdir / "out.mp4"), str(out_path))
     thumb = out_path.with_suffix(".jpg")
     extract_thumbnail(out_path, thumb, min(1.0, duration / 2), settings)
