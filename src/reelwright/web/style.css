@@ -17,3 +17,4 @@ button.ghost{background:transparent;color:var(--acc);border:1px solid var(--line
 .clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:12px}
 .clip video{width:100%;aspect-ratio:9/16;background:#000;border-radius:8px}.clip p{margin:4px 0;font-size:12px}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+[hidden]{display:none!important}
