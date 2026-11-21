@@ -1,0 +1,37 @@
+# docker compose up -d                          -> app only (SQLite)
+# docker compose --profile https up -d          -> app + Caddy with automatic HTTPS
+# docker compose --profile postgres up -d       -> app + Postgres (also set REELWRIGHT_DATABASE_URL in .env)
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: [.env]
+    ports: ["127.0.0.1:8000:8000"]
+    volumes: [reelwright-data:/data]
+
+  caddy:
+    profiles: [https]
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    depends_on: [app]
+
+  postgres:
+    profiles: [postgres]
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: reelwright
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: reelwright
+    volumes: [pgdata:/var/lib/postgresql/data]
+
+volumes:
+  reelwright-data:
+  caddy-data:
+  pgdata:
